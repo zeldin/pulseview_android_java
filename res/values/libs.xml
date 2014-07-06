@@ -13,6 +13,10 @@
 
      <array name="qt_libs">
          <!-- %%INSERT_QT_LIBS%% -->
+         <item>Qt5Core</item>
+         <item>Qt5Gui</item>
+         <item>Qt5Widgets</item>
+         <item>Qt5Svg</item>
      </array>
 
     <array name="bundled_in_lib">

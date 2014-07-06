@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+
+    <array name="usb_ids">
+	<item>0x04b4</item> <item>@array/cypress_usb_ids</item>
+	<item>0x08a9</item> <item>@array/cwav_usb_ids</item>
+	<item>0x0925</item> <item>@array/lakeview_usb_ids</item>
+	<item>0x0c12</item> <item>@array/zeroplus_usb_ids</item>
+	<item>0x1244</item> <item>@array/victor_usb_ids</item>
+	<item>0x16d0</item> <item>@array/mcs_usb_ids</item>
+	<item>0x21a9</item> <item>@array/saleae_usb_ids</item>
+    </array>
+
+    <array name="cypress_usb_ids">
+	<item>0x2090</item>
+	<item>0x2150</item>
+	<item>0x2250</item>
+	<item>0x5200</item>
+	<item>0x520a</item>
+	<item>0x8613</item>
+    </array>
+
+    <array name="cwav_usb_ids">
+	<item>0x0009</item>
+	<item>0x0014</item>
+	<item>0x0015</item>
+    </array>
+
+    <array name="lakeview_usb_ids">
+	<item>0x3881</item>
+    </array>
+
+    <array name="zeroplus_usb_ids">
+	<item>0x7002</item>
+	<item>0x7009</item>
+	<item>0x700a</item>
+	<item>0x700b</item>
+	<item>0x700c</item>
+	<item>0x700d</item>
+	<item>0x700e</item>
+	<item>0x7016</item>
+    </array>
+
+    <array name="victor_usb_ids">
+	<item>0xd237</item>
+    </array>
+
+    <array name="mcs_usb_ids">
+	<item>0x0498</item>
+    </array>
+
+    <array name="saleae_usb_ids">
+	<item>0x1001</item>
+    </array>
+
+</resources>

@@ -5,6 +5,19 @@
   <property name="pulseview-build-path" value="${pulseview-source-path}"/>
   <property name="cmake-cache" value="${pulseview-build-path}/CMakeCache.txt"/>
 
+  <target name="-build-anttasks" >
+    <mkdir dir="ant/build"/>
+    <javac srcdir="ant/source" destdir="ant/build" includeantruntime="yes"/>
+    <jar destfile="ant/tasks.jar">
+      <fileset dir="ant/build" />
+      <fileset dir="ant/resources"/>
+    </jar>
+  </target>
+
+  <target name="-declare-anttasks" depends="-build-anttasks">
+    <taskdef resource="anttasks.properties" classpath="ant/tasks.jar"/>
+  </target>
+
   <target name="-get-prefix">
     <loadproperties srcFile="${cmake-cache}" prefix="cmake">
       <filterchain>
@@ -14,10 +27,12 @@
     <property name="prefix" value="${cmake.CMAKE_INSTALL_PREFIX}"/>
   </target>
 
-  <target name="-pre-build" depends="-get-prefix">
-    <copy todir="${native.libs.absolute.dir}">
+  <target name="-pre-build" depends="-get-prefix, -declare-anttasks">
+    <copylibs todir="${native.libs.absolute.dir}">
       <fileset dir="${pulseview-build-path}/libs" />
-    </copy>
+      <include name="libgnustl_shared.so"/>
+      <exclude name="lib*.so"/>
+    </copylibs>
     <copy file="${pulseview-source-path}/icons/sigrok-logo-notext.png"
           tofile="${resource.absolute.dir}/drawable/logo.png" />
     <copy todir="${asset.absolute.dir}/libsigrokdecode">

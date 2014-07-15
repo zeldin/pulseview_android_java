@@ -7,3 +7,5 @@
 /proguard-project.txt
 /bin/
 /gen/
+/ant/build/
+/ant/tasks.jar

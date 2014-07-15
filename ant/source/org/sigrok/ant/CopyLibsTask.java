@@ -63,6 +63,8 @@ public class CopyLibsTask extends Task {
 	protected final TreeSet<Range> fixups;
 	protected final String subdir;
 	protected String soname, destname;
+	protected final HashSet<Library> dependencies;
+	protected boolean dependedUpon;
 
 	protected class Range implements Comparable<Range> {
 
@@ -215,6 +217,8 @@ public class CopyLibsTask extends Task {
 	    rpath = new Vector<String>();
 	    fixups = new TreeSet<Range>();
 	    soname = f.getName();
+	    dependencies = new HashSet<Library>();
+	    dependedUpon = false;
 	    checkElf();
 	    destname = fixSoname(soname);
 	}
@@ -266,6 +270,8 @@ public class CopyLibsTask extends Task {
 	{
 	    if (l2 == null) // Dependancy on external lib
 		return;
+	    l1.dependencies.add(l2);
+	    l2.dependedUpon = true;
 	}
 
 	protected Library findLibInRpath(String s, String subdir)
@@ -316,6 +322,31 @@ public class CopyLibsTask extends Task {
 		setDependency(l, getLibForSoname(need, l.subdir));
 	}
 
+	protected Vector<Library> topoSort(HashSet<Library> libs)
+	{
+	    Vector<Library> order = new Vector<Library>();
+	    for (Library chk : new HashSet<Library>(libs)) {
+		if (!chk.dependedUpon)
+		    libs.remove(chk);
+	    }
+	    while (!libs.isEmpty()) {
+		HashSet<Library> leafs = new HashSet<Library>();
+		for (Library chk : new HashSet<Library>(libs)) {
+		    if (chk.dependencies.isEmpty())
+			leafs.add(chk);
+		}
+		if (leafs.isEmpty())
+		    throw new BuildException("Circular dependency found");
+		ArrayList<Library> llist = new ArrayList<Library>(leafs);
+		Collections.sort(llist);
+		order.addAll(llist);
+		libs.removeAll(leafs);
+		for (Library l : libs)
+		    l.dependencies.removeAll(leafs);
+	    }
+	    return order;
+	}
+
 	protected void execute() throws BuildException
 	{
 	    try {
@@ -323,6 +354,23 @@ public class CopyLibsTask extends Task {
 		    process(workQueue.remove());
 	    } catch (Exception e) {
 		throw buildException(e);
+	    }
+	    if (property != null) {
+		Vector<Library> order =
+		    topoSort(new HashSet<Library>(processedLibs));;
+		StringBuilder sb = new StringBuilder();
+		for (Library l : order) {
+		    String name = l.destname;
+		    if (name.startsWith("lib"))
+			name = name.substring(3);
+		    if (name.endsWith(".so"))
+			name = name.substring(0, name.length()-3);
+		    sb.append("	<item>");
+		    sb.append(name);
+		    sb.append("</item>\n");
+		}
+		String orderedLibs = sb.toString();
+		getProject().setNewProperty(property, orderedLibs);
 	    }
 	    for (Library chk : new HashSet<Library>(processedLibs)) {
 		File dest = chk.getDestName(destDir);
@@ -360,6 +408,7 @@ public class CopyLibsTask extends Task {
     protected File destDir = null;  // the destination directory
     protected Vector<ResourceCollection> rcs = new Vector<ResourceCollection>();
     protected PatternSet patterns = new PatternSet();
+    protected String property = null;
 
     public void setTodir(File destDir) {
         this.destDir = destDir;
@@ -381,6 +430,11 @@ public class CopyLibsTask extends Task {
     public PatternSet.NameEntry createInclude()
     {
 	return patterns.createInclude();
+    }
+
+    public void setProperty(String prop)
+    {
+	property = prop;
     }
 
     public void execute() throws BuildException {

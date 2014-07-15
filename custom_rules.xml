@@ -28,11 +28,17 @@
   </target>
 
   <target name="-pre-build" depends="-get-prefix, -declare-anttasks">
-    <copylibs todir="${native.libs.absolute.dir}">
+    <copylibs todir="${native.libs.absolute.dir}" property="bundled_libs">
       <fileset dir="${pulseview-build-path}/libs" />
       <include name="libgnustl_shared.so"/>
       <exclude name="lib*.so"/>
     </copylibs>
+    <copy file="bundled_libs.xml.in"
+          tofile="${resource.absolute.dir}/values/bundled_libs.xml">
+      <filterset>
+        <filter token="bundled_libs" value="${bundled_libs}"/>
+      </filterset>
+    </copy>
     <copy file="${pulseview-source-path}/icons/sigrok-logo-notext.png"
           tofile="${resource.absolute.dir}/drawable/logo.png" />
     <copy todir="${asset.absolute.dir}/libsigrokdecode">

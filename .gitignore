@@ -1,6 +1,7 @@
 /libs/
 /assets/
 /res/drawable/
+/res/values/bundled_libs.xml
 /build.xml
 /project.properties
 /local.properties

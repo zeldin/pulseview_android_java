@@ -1,0 +1,9 @@
+/libs/
+/assets/
+/res/drawable/
+/build.xml
+/project.properties
+/local.properties
+/proguard-project.txt
+/bin/
+/gen/

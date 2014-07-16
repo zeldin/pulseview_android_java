@@ -41,6 +41,12 @@
     </copy>
     <copy file="${pulseview-source-path}/icons/sigrok-logo-notext.png"
           tofile="${resource.absolute.dir}/drawable/logo.png" />
+    <copy todir="${source.absolute.dir}">
+      <fileset dir="${prefix}/src/android/java/src">
+	<include name="org/qtproject/qt5/android/bindings/**"/>
+	<include name="org/kde/necessitas/ministro/**"/>
+      </fileset>
+    </copy>
     <copy todir="${asset.absolute.dir}/libsigrokdecode">
       <fileset dir="${prefix}/share/libsigrokdecode" />
     </copy>

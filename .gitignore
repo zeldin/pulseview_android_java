@@ -10,3 +10,5 @@
 /gen/
 /ant/build/
 /ant/tasks.jar
+/src/org/qtproject/
+/src/org/kde/

@@ -219,13 +219,12 @@ public class UsbSupplicant
 
     public void start()
     {
-	Log.i("UsbSupplicant", "start");
 	context.registerReceiver(permReceiver, permFilter);
 	context.registerReceiver(hotplugReceiver, hotplugFilter);
 	HashMap<String,UsbDevice> devlist = manager.getDeviceList();
 	for (UsbDevice dev : devlist.values()) {
 	    if (interresting(dev) && !manager.hasPermission(dev)) {
-		Log.i("UsbSupplicant", "found interresting device "+dev);
+		Log.d("UsbSupplicant", "found interresting device "+dev);
 		askFor(dev);
 	    }
 	}
@@ -233,7 +232,6 @@ public class UsbSupplicant
 
     public void stop()
     {
-	Log.i("UsbSupplicant", "stop");
 	context.unregisterReceiver(hotplugReceiver);
 	context.unregisterReceiver(permReceiver);
     }
@@ -245,7 +243,6 @@ public class UsbSupplicant
 
     protected void attachCallback(UsbDevice dev)
     {
-	Log.d("UsbSupplicant", "attached device " + dev);
 	if (interresting(dev) && !manager.hasPermission(dev)) {
 	    askFor(dev);
 	}
@@ -253,6 +250,5 @@ public class UsbSupplicant
 
     protected void detachCallback(UsbDevice dev)
     {
-	Log.d("UsbSupplicant", "detached device " + dev);
     }
 }

@@ -40,20 +40,16 @@ public final class UsbHelper
 
     private static int open(UsbManager manager, String name, int mode)
     {
-	Log.i("UsbHelper", "open("+name+","+mode+") called");
 	if (manager == null) {
-	    Log.i("UsbHelper", "no manager");
+	    Log.w("UsbHelper", "no manager");
 	    return -1;
 	}
 	HashMap<String,UsbDevice> devlist = manager.getDeviceList();
-	Log.i("UsbHelper", "devlist = "+devlist);
 	UsbDevice dev = (devlist == null? null : devlist.get(name));
 	if (dev == null) {
-	    Log.i("UsbHelper", "dev not found");
 	    return -1;
 	}
 	if (!manager.hasPermission(dev)) {
-	    Log.i("UsbHelper", "no permission for dev");
 	    return -1;
 	}
 	UsbDeviceConnection conn = manager.openDevice(dev);
@@ -65,7 +61,7 @@ public final class UsbHelper
 	try {
 	    return open(manager, name, mode);
 	} catch(Exception e) {
-	    Log.i("UsbHelper", "caught exception "+e);
+	    Log.w("UsbHelper", "caught exception "+e);
 	    return -1;
 	}
     }

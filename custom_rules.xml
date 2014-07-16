@@ -47,6 +47,7 @@
     <copy todir="${asset.absolute.dir}/python3.3">
       <fileset dir="${prefix}/lib/python3.3">
 	<include name="**/*.py"/>
+	<exclude name="**/test/**"/>
       </fileset>
     </copy>
   </target>

@@ -13,7 +13,7 @@ public class PulseViewActivity extends QtActivity
     public void onCreate(Bundle savedInstanceState)
     {
 	super.onCreate(savedInstanceState);
-	supplicant = new UsbSupplicant(getApplicationContext(), R.array.usb_ids);
+	supplicant = new UsbSupplicant(getApplicationContext(), R.xml.device_filter);
     }
 
     @Override

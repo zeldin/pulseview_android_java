@@ -6,12 +6,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
-import android.content.res.TypedArray;
+import android.content.res.XmlResourceParser;
 import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
 import android.util.Log;
+import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Vector;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
 
 public class UsbSupplicant
 {
@@ -24,9 +28,102 @@ public class UsbSupplicant
     private final BroadcastReceiver hotplugReceiver;
     private final IntentFilter permFilter;
     private final IntentFilter hotplugFilter;
-    private final HashMap<Integer,HashSet<Integer>> usbIds;
+    private final Vector<DeviceFilter> deviceFilters;
 
-    public UsbSupplicant(Context ctx, int usb_ids_resource)
+    // The code in the following inner class is taken from AOSP,
+    // which is licensed under the Apache License, Version 2.0
+    private static class DeviceFilter {
+        // USB Vendor ID (or -1 for unspecified)
+        public final int mVendorId;
+        // USB Product ID (or -1 for unspecified)
+        public final int mProductId;
+        // USB device or interface class (or -1 for unspecified)
+        public final int mClass;
+        // USB device subclass (or -1 for unspecified)
+        public final int mSubclass;
+        // USB device protocol (or -1 for unspecified)
+        public final int mProtocol;
+
+        public DeviceFilter(int vid, int pid, int clasz, int subclass, int protocol) {
+            mVendorId = vid;
+            mProductId = pid;
+            mClass = clasz;
+            mSubclass = subclass;
+            mProtocol = protocol;
+        }
+
+        public DeviceFilter(UsbDevice device) {
+            mVendorId = device.getVendorId();
+            mProductId = device.getProductId();
+            mClass = device.getDeviceClass();
+            mSubclass = device.getDeviceSubclass();
+            mProtocol = device.getDeviceProtocol();
+        }
+
+        public static DeviceFilter read(XmlPullParser parser)
+                throws XmlPullParserException, IOException {
+            int vendorId = -1;
+            int productId = -1;
+            int deviceClass = -1;
+            int deviceSubclass = -1;
+            int deviceProtocol = -1;
+
+            int count = parser.getAttributeCount();
+            for (int i = 0; i < count; i++) {
+                String name = parser.getAttributeName(i);
+                // All attribute values are ints
+                int value = Integer.parseInt(parser.getAttributeValue(i));
+
+                if ("vendor-id".equals(name)) {
+                    vendorId = value;
+                } else if ("product-id".equals(name)) {
+                    productId = value;
+                } else if ("class".equals(name)) {
+                    deviceClass = value;
+                } else if ("subclass".equals(name)) {
+                    deviceSubclass = value;
+                } else if ("protocol".equals(name)) {
+                    deviceProtocol = value;
+                }
+            }
+            return new DeviceFilter(vendorId, productId,
+                    deviceClass, deviceSubclass, deviceProtocol);
+        }
+
+        private boolean matches(int clasz, int subclass, int protocol) {
+            return ((mClass == -1 || clasz == mClass) &&
+                    (mSubclass == -1 || subclass == mSubclass) &&
+                    (mProtocol == -1 || protocol == mProtocol));
+        }
+
+        public boolean matches(UsbDevice device) {
+            if (mVendorId != -1 && device.getVendorId() != mVendorId) return false;
+            if (mProductId != -1 && device.getProductId() != mProductId) return false;
+
+            // check device class/subclass/protocol
+            if (matches(device.getDeviceClass(), device.getDeviceSubclass(),
+                    device.getDeviceProtocol())) return true;
+
+            // if device doesn't match, check the interfaces
+            int count = device.getInterfaceCount();
+            for (int i = 0; i < count; i++) {
+                UsbInterface intf = device.getInterface(i);
+                 if (matches(intf.getInterfaceClass(), intf.getInterfaceSubclass(),
+                        intf.getInterfaceProtocol())) return true;
+            }
+
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return "DeviceFilter[mVendorId=" + mVendorId + ",mProductId=" + mProductId +
+                    ",mClass=" + mClass + ",mSubclass=" + mSubclass +
+                    ",mProtocol=" + mProtocol + "]";
+        }
+    }
+
+    public UsbSupplicant(Context ctx, int device_filter_resource)
     {
 	context = ctx;
 	manager = (UsbManager) ctx.getSystemService(Context.USB_SERVICE);
@@ -55,53 +152,45 @@ public class UsbSupplicant
 	permFilter = new IntentFilter(ACTION_USB_PERMISSION);
 	hotplugFilter = new IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED);
 	hotplugFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-	usbIds = new HashMap<Integer,HashSet<Integer>>();
-	addUsbIds(ctx.getResources(), usb_ids_resource);
+	deviceFilters = new Vector<DeviceFilter>();
+	addDeviceFilters(ctx.getResources(), device_filter_resource);
     }
 
-    private void addUsbIds(Resources res, int res_id)
+    private void addDeviceFilters(Resources res, int res_id)
     {
-	usbIds.clear();
-	TypedArray vendor_ids = res.obtainTypedArray(res_id);
+        XmlResourceParser parser = res.getXml(res_id);
+	if (parser == null) {
+	    Log.w("UsbSupplicant", "Unable to get device filter resource");
+	    return;
+	}
+	deviceFilters.clear();
 	try {
-	    int i, cnt = vendor_ids.length();
-	    for (i=0; i<cnt; i+=2) {
-		int vid = vendor_ids.getInt(i, -1);
-		int prod_res_id = vendor_ids.getResourceId(i+1, 0);
-		if (vid >= 0 && res_id != 0) {
-		    HashSet<Integer> vendor_set = new HashSet<Integer>();
-		    int[] prod_ids = res.getIntArray(prod_res_id);
-		    for (int pid : prod_ids)
-			vendor_set.add(pid);
-		    usbIds.put(vid, vendor_set);
+	    while (parser.next() != XmlPullParser.END_DOCUMENT) {
+		if (parser.getEventType() == XmlPullParser.START_TAG) {
+		    if ("usb-device".equals(parser.getName())) {
+			deviceFilters.add(DeviceFilter.read(parser));
+		    }
 		}
 	    }
-	} finally {
-	    vendor_ids.recycle();
+	} catch(IOException e) {
+	    Log.wtf("UsbSupplicant",
+		    "Failed to parse device filter resource", e);
+	} catch(XmlPullParserException e) {
+	    Log.wtf("UsbSupplicant",
+		    "Failed to parse device filter resource", e);
 	}
-    }
-
-    protected boolean interresting(int vid, int pid)
-    {
-	HashSet<Integer> vendorSet = usbIds.get(vid);
-
-	if (vendorSet != null &&
-	    vendorSet.contains(pid))
-	    return true;
-
-	if (pid != 0 && interresting(vid, 0))
-	    return true;
-
-	if (vid != 0 && interresting(0, pid))
-	    return true;
-
-	return false;
     }
 
     protected boolean interresting(UsbDevice dev)
     {
-	return dev != null &&
-	    interresting(dev.getVendorId(), dev.getProductId());
+	if (dev == null)
+	    return false;
+
+	for (DeviceFilter f : deviceFilters)
+	    if (f.matches(dev))
+		return true;
+
+	return false;
     }
 
     protected void askFor(UsbDevice dev)

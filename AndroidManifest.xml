@@ -1,6 +1,13 @@
 <?xml version='1.0' encoding='utf-8'?>
-<manifest package="org.sigrok.pulseview" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="1.0" android:versionCode="1" android:installLocation="auto">
-    <application android:hardwareAccelerated="true" android:name="org.sigrok.pulseview.PulseViewApplication" android:label="@string/app_name" android:icon="@drawable/logo">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+		package="org.sigrok.pulseview" 
+		android:versionName="0.2.0"
+		android:versionCode="20"
+		android:installLocation="auto">
+    <application android:hardwareAccelerated="true"
+		 android:name="org.sigrok.pulseview.PulseViewApplication"
+		 android:label="@string/app_name"
+		 android:icon="@drawable/logo">
         <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|locale|fontScale|keyboard|keyboardHidden|navigation"
                   android:name="org.sigrok.pulseview.PulseViewActivity"
                   android:label="@string/app_name"
@@ -37,10 +44,7 @@
             <!-- Splash screen -->
         </activity>
     </application>
-    <uses-sdk android:minSdkVersion="9" android:targetSdkVersion="14"/>
+    <uses-sdk android:minSdkVersion="12" android:targetSdkVersion="14"/>
     <supports-screens android:largeScreens="true" android:normalScreens="true" android:anyDensity="true" android:smallScreens="true"/>
-    <!-- %%INSERT_PERMISSIONS -->
-    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <!-- %%INSERT_FEATURES -->
 </manifest>
